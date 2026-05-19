@@ -8,7 +8,7 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
-from db.models import PHOTO_DIR, get_session
+from db.models import PHOTO_DIR, Customer, get_session
 from pipeline.metrics import ProfileEntry, overall_score
 
 
@@ -93,3 +93,21 @@ def customer_age(customer) -> str:
     if not customer.birth_year:
         return "—"
     return str(date.today().year - customer.birth_year)
+
+
+def pick_customer(db, label: str = "顧客"):
+    """Customer selectbox that returns a session-bound Customer.
+
+    Selecting by id (never by ORM object) avoids DetachedInstanceError when
+    Streamlit restores widget state across reruns.
+    """
+    customers = db.query(Customer).order_by(Customer.name).all()
+    if not customers:
+        return None
+    names = {c.id: c.name for c in customers}
+    ids = list(names)
+    preset = st.session_state.get("customer_id")
+    index = ids.index(preset) if preset in ids else 0
+    chosen = st.selectbox(label, ids, index=index,
+                          format_func=lambda i: names[i])
+    return db.get(Customer, chosen)
