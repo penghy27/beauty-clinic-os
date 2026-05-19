@@ -2,14 +2,14 @@
 
 **An AI-native CRM and clinical decision-support system for Taiwanese aesthetic clinics**
 
-*Prepared for the AI Fund "Beauty Clinic OS" challenge. Status: working prototype.*
+*Status: working prototype.*
 
 ---
 
 ## 1. Problem — three pain points heard first-hand
 
-At an AI Fund breakfast session in Taipei, clinic owners described, in their own
-words, three problems that the existing software market does not solve:
+Clinic owners described, in their own words, three problems that the existing
+software market does not solve:
 
 1. **The first-line consultation is inconsistent and feels sales-driven.** Every
    customer who walks in is met first by a consultant. But consultant quality

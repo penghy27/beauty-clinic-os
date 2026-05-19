@@ -7,3 +7,8 @@ __pycache__/
 data/
 .streamlit/secrets.toml
 requirements.lock.txt
+
+# Internal planning docs
+docs/PLAN.md
+docs/DEMO_SCRIPT.md
+docs/PROGRESS.md
