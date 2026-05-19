@@ -1,0 +1,71 @@
+# Treatment suggestion rules for Beauty Clinic OS.
+#
+# A rule fires when a skin metric's average sub-score falls at or below
+# max_sub_score. Lower max_sub_score = more severe tier; only the most severe
+# matching rule per metric fires. Treatments are generic and non-branded —
+# this is decision support, not a prescription. Editable by clinic staff.
+
+rules:
+  - id: redness_significant
+    metric: redness
+    max_sub_score: 42
+    priority: 1
+    treatment: 抗泛紅鎮定療程
+    detail: 醫療級舒緩導入搭配 IPL 脈衝光，針對血管性泛紅與敏感
+    caution: 酒糟、急性發炎或正在使用 A 酸者，須先由醫師評估
+
+  - id: redness_moderate
+    metric: redness
+    max_sub_score: 62
+    priority: 3
+    treatment: 舒緩保濕護理
+    detail: 醫療級鎮定面膜與保濕導入，強化肌膚屏障
+    caution: 對導入成分過敏者建議先做局部測試
+
+  - id: evenness_significant
+    metric: evenness
+    max_sub_score: 42
+    priority: 1
+    treatment: 淨白勻亮雷射療程
+    detail: 淨膚雷射搭配美白導入，改善膚色不均與暗沉
+    caution: 術後須嚴格防曬；懷孕期間不建議施作
+
+  - id: evenness_moderate
+    metric: evenness
+    max_sub_score: 62
+    priority: 3
+    treatment: 亮白保養導入
+    detail: 維生素 C 導入與溫和角質代謝，提升膚色均勻度
+    caution: 角質代謝產品須避免與其他刺激性療程同期
+
+  - id: texture_significant
+    metric: texture
+    max_sub_score: 42
+    priority: 2
+    treatment: 毛孔緊緻換膚療程
+    detail: 飛梭雷射或杏仁酸換膚，改善粗糙與毛孔
+    caution: 敏感肌須降低強度；術後注意保濕修護
+
+  - id: texture_moderate
+    metric: texture
+    max_sub_score: 62
+    priority: 3
+    treatment: 深層保濕細緻護理
+    detail: 保濕導入與溫和煥膚，提升肌膚平滑度
+    caution: 無特殊禁忌；建議搭配居家保濕
+
+  - id: spots_significant
+    metric: spots
+    max_sub_score: 42
+    priority: 2
+    treatment: 色素淡化雷射療程
+    detail: 皮秒或淨膚雷射，針對斑點與色素沉澱
+    caution: 須由醫師確認色素型態；術後嚴格防曬
+
+  - id: spots_moderate
+    metric: spots
+    max_sub_score: 62
+    priority: 3
+    treatment: 淡斑保養療程
+    detail: 美白精華導入與代謝調理，淡化淺層色素
+    caution: 建議搭配防曬以避免色素回沉
