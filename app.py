@@ -19,7 +19,19 @@ from ui.common import nav
 st.set_page_config(page_title="Beauty Clinic OS", page_icon="🪞",
                    layout="wide")
 
-seed_if_empty()
+@st.cache_resource
+def _bootstrap() -> bool:
+    """Create tables and seed demo data once per server process.
+
+    Running this inside cache_resource makes it execute exactly once,
+    which avoids a cold-start race where concurrent script runs each
+    inspect the empty database and then both issue CREATE TABLE.
+    """
+    seed_if_empty()
+    return True
+
+
+_bootstrap()
 st.session_state.setdefault("page", "customers")
 
 with st.sidebar:
