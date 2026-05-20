@@ -1,7 +1,6 @@
 """Beauty Clinic OS — AI-native consultation + CRM for aesthetic clinics.
 
-A Streamlit prototype built for the AI Fund "Beauty Clinic OS" challenge.
-Anchored on three pain points heard from clinic owners:
+A Streamlit prototype anchored on three pain points heard from clinic owners:
   1. inconsistent, sales-driven first-line consultations
   2. paper-based CRM (revisits, packages, payments)
   3. customers with no record of what actually improved
