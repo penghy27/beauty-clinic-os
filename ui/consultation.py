@@ -146,7 +146,7 @@ def _render_consultation_plan(db, customer, result) -> None:
         with st.container(border=True):
             st.markdown(f"**{s.treatment}**　:gray[優先度 {s.priority}]")
             st.markdown(s.detail)
-            st.markdown(f"📊 **依據**：{s.reason}")
+            st.markdown(f"📊 **依據**：{s.reason_humanized or s.reason}")
             if s.trend:
                 st.markdown(f"🔁 **療程追蹤**：{s.trend}")
             st.caption(f"注意事項：{s.caution}")
@@ -188,7 +188,7 @@ def _plan_dataframe(suggestions) -> pd.DataFrame:
             "採用": True,
             "療程": s.treatment,
             "說明": s.detail,
-            "依據（數據）": s.reason,
+            "依據（數據）": s.reason_humanized or s.reason,
             "療程追蹤": s.trend,
             "注意事項": s.caution,
         }

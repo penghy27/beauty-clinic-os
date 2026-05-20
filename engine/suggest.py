@@ -36,6 +36,7 @@ class Suggestion:
     priority: int
     sub_score: float     # triggering metric average
     trend: str = ""      # outcome-aware note (closed loop); "" on first visit
+    reason_humanized: str = ""  # optional LLM-polished reason; falls back to `reason`
 
 
 def _load_rules() -> list[dict]:
@@ -88,7 +89,23 @@ def suggest(current: list[ProfileEntry],
         )
 
     suggestions.sort(key=lambda s: (s.priority, s.sub_score))
+    _apply_humanize(suggestions)
     return suggestions
+
+
+def _apply_humanize(suggestions: list[Suggestion]) -> None:
+    """Optional polish — silently no-op when LLM key/package is absent."""
+    try:
+        from engine import humanize
+    except Exception:
+        return
+    refined = humanize.refine(suggestions)
+    if not refined:
+        return
+    for s in suggestions:
+        text = refined.get(s.rule_id)
+        if text:
+            s.reason_humanized = text
 
 
 def _worst_region_per_metric(
