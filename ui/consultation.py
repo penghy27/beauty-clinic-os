@@ -40,12 +40,18 @@ def render_new_consultation() -> None:
         st.info("請先到「顧客管理」建立顧客。")
         return
 
-    uploaded = st.file_uploader("上傳顧客正面臉部照片", type=["jpg", "jpeg", "png"])
-    if uploaded is None:
-        st.info("上傳一張正面臉部照片即可開始標準化膚質諮詢。")
+    tab_upload, tab_camera = st.tabs(["📁 上傳檔案", "📷 現場拍照"])
+    with tab_upload:
+        uploaded = st.file_uploader("上傳顧客正面臉部照片",
+                                    type=["jpg", "jpeg", "png"])
+    with tab_camera:
+        shot = st.camera_input("請正對鏡頭拍攝顧客臉部")
+    source = uploaded or shot
+    if source is None:
+        st.info("上傳或拍攝一張正面臉部照片即可開始標準化膚質諮詢。")
         return
 
-    result = _run_pipeline(uploaded)
+    result = _run_pipeline(source)
     if not result.ok:
         st.error(result.message)
         return
@@ -57,7 +63,7 @@ def render_new_consultation() -> None:
 
 def _run_pipeline(uploaded):
     """Run the imaging pipeline once per uploaded file (cached in session)."""
-    file_key = f"{uploaded.name}:{uploaded.size}"
+    file_key = f"{getattr(uploaded, 'name', 'camera')}:{uploaded.size}"
     if st.session_state.get("pipe_key") != file_key:
         image_bgr = read_upload(uploaded)
         with st.spinner("影像分析中…"):

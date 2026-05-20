@@ -10,6 +10,7 @@ requirements.lock.txt
 
 # Internal planning docs
 docs/PLAN.md
+docs/PLAN_PHASE2.md
 docs/DEMO_SCRIPT.md
 docs/PROGRESS.md
 docs/KM.md
