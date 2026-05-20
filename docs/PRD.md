@@ -60,10 +60,12 @@ recommendations  →  (back to the next consultation)
 
 **What the prototype implements today:**
 
-- **Standardized photo intake.** A front-face photo is run through an imaging
-  pipeline with a **Capture Quality gate** (blur, pose, exposure/side-lighting,
-  face ratio) producing a 0–100 score and a check-list. Poor photos are
-  rejected with an explanation, so longitudinal comparison stays trustworthy.
+- **Standardized photo intake.** A front-face photo — either uploaded or
+  captured live in-browser via the consultant's webcam — is run through an
+  imaging pipeline with a **Capture Quality gate** (blur, pose,
+  exposure/side-lighting, face ratio) producing a 0–100 score and a
+  check-list. Poor photos are rejected with an explanation, so longitudinal
+  comparison stays trustworthy.
 - **Quantified skin profile.** Color is normalized (gray-world white balance);
   landmark-anchored regions are sampled identically every visit; four metrics —
   **redness, evenness, texture, spots** — are scored 0–100 per region.
@@ -130,6 +132,18 @@ all need to read naturally to that consultant and that customer. Building
 Traditional-Chinese-native from the start — rather than translating an
 English product — is what makes the consultation feel professional and local,
 and is treated here as one of the brief's optional depth areas.
+
+## 7. Optional copy polishing — LLM never decides
+
+The treatment recommendation, the metric scores and the data-grounded reason
+that ties one to the other are all produced by the rules engine and the
+on-host CV pipeline. An optional LLM layer rewrites the template reason into
+more natural Mandarin **without changing the treatment or the numbers**. If
+no key is configured, or the call fails, the UI falls back to the template
+text — behaviour is identical to a key-free run. Inputs sent to the model
+are numeric only: metric label, region label, sub-score, the template
+reason, the treatment name and the trend note. No images, names or medical
+history leave the host.
 
 ---
 

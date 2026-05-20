@@ -6,7 +6,7 @@ A self-built, AI-native CRM and clinical decision-support prototype for Taiwanes
 
 Beauty Clinic OS is a closed-loop prototype with four components and no external skin-analysis dependency:
 
-- **UI** — Streamlit, pure-Python, Mandarin-labelled (`app.py`, `ui/*.py`).
+- **UI** — Streamlit, pure-Python, Mandarin-labelled (`app.py`, `ui/*.py`). The consultation page accepts both file uploads and live in-browser webcam capture (`st.camera_input`) as photo input — both feed the same pipeline entry point.
 - **Data** — SQLite via SQLAlchemy 2.0 ORM, a six-table model (`db/models.py`).
 - **Imaging pipeline** — classical computer vision orchestrated by `pipeline/process.py`.
 - **Suggestion engine** — a rules-based, outcome-aware engine reading `rules/treatments.yaml` (`engine/suggest.py`).
@@ -63,6 +63,7 @@ Together: standardized intake + neutral colour + identical sampling regions mean
 - **Explainable** — each `Suggestion` records the triggering `metric`, `region`, `sub_score` and a data-grounded `reason` naming the metric average and the worst region with its score (e.g. "泛紅平均膚質分 58，最弱區為右頰（51 分）"). Every suggestion points to the exact data that triggered it, so it never feels like an upsell — the wedge that fixes the inconsistent-consultation pain point.
 - **Editable** — suggestions serialise via `to_json()`/`from_json()`. The `recommendations` table stores `generated_json` (engine output) and `edited_json` (consultant-approved copy) separately, with a `draft`/`approved` status — a visible human-in-the-loop edit.
 - **Outcome-aware** — when a previous visit is supplied, `_trend_note()` compares the current per-metric average to the last visit's and appends a trend note: improvement ≥ 5 sub-score points ("療程有效，建議延續同方案"), regression ≤ −5 ("改善有限，建議調整療程強度或方式"), or roughly flat ("建議維持並持續追蹤"). `positive_notes()` surfaces improved metrics for the customer-facing progress report. This closes the loop: measure → suggest → treat → re-measure → outcome-aware next round.
+- **Optional LLM polishing** — `engine/humanize.py` populates a `reason_humanized` field on each `Suggestion` with an LLM-rewritten version of the template reason; the UI displays `reason_humanized or reason`. The rules engine still chooses every treatment and every number — the model only rewrites display copy. When `ANTHROPIC_API_KEY` is absent, the package is missing, the call times out or returns unparseable output, or a per-session call cap is hit, the field stays empty and the UI falls back to the template `reason`; rules-based decision logic is unaffected. Inputs sent to the model are numeric only (metric label, region label, sub-score, template reason, treatment name, trend note); no images, names or medical history leave the host. `@st.cache_data` plus the session-level cap bound per-session API spend.
 
 ## 6. Data Model & Workflow Integration
 
@@ -83,7 +84,7 @@ The long-format Skin Profile is the key design choice for longitudinal compariso
 The prototype reports **relative trends, not absolute diagnosis**. It is framed as decision support for the front-line consultant, not an automated medical verdict. Concretely:
 
 - Metrics are presented as 0–100 sub-scores and between-visit deltas, contextualised by the Capture Quality Score; comparisons are only valid when capture quality is comparable.
-- Every metric formula is documented and reproducible — no opaque model, no external API call, all processing on-host.
+- Every metric formula is documented and reproducible — no opaque model, no external API for skin analysis, all skin processing on-host. (An optional LLM polishing layer for the displayed reason text is described in §5; it sees only numeric inputs and never alters treatments or scores.)
 - Treatment copy is generic and conservative, every `caution` field flags contraindications, and the consultant must review and approve suggestions (`generated_json` → `edited_json`) before they reach the customer.
 - The quality gate fails fast and explains itself, so unreliable inputs never silently become clinical records.
 
