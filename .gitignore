@@ -14,3 +14,8 @@ docs/PLAN_PHASE2.md
 docs/DEMO_SCRIPT.md
 docs/PROGRESS.md
 docs/KM.md
+
+# Local exports / Word temp files (PRD.md & TDD.md are the source of truth)
+docs/*.pdf
+docs/*.docx
+docs/~$*
