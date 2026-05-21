@@ -8,10 +8,13 @@ real imaging pipeline on top of this.
 from __future__ import annotations
 
 import random
+import shutil
 from datetime import date, datetime
 
 from db.models import (
     METHOD_VERSION,
+    PHOTO_DIR,
+    PROJECT_ROOT,
     Customer,
     Package,
     Photo,
@@ -53,12 +56,33 @@ def _make_profile(base: dict[str, float], seed: int) -> list[ProfileEntry]:
     return entries
 
 
+def _copy_sample_photo(src_name: str, label: str) -> tuple[str, str] | None:
+    """Copy sample_photos/<src_name> into PHOTO_DIR as raw + norm files.
+
+    Returns (raw_path, normalized_path), or None if the source is missing,
+    so the seed degrades gracefully and the visit just shows "無照片紀錄".
+    """
+    source = PROJECT_ROOT / "sample_photos" / src_name
+    if not source.exists():
+        return None
+    PHOTO_DIR.mkdir(parents=True, exist_ok=True)
+    raw = PHOTO_DIR / f"{label}_raw.jpg"
+    norm = PHOTO_DIR / f"{label}_norm.jpg"
+    shutil.copyfile(source, raw)
+    shutil.copyfile(source, norm)
+    return (str(raw), str(norm))
+
+
 def _persist_visit(session, visit: Visit, entries: list[ProfileEntry],
                    quality_score: float,
-                   previous: list[ProfileEntry] | None) -> None:
+                   previous: list[ProfileEntry] | None,
+                   photo_paths: tuple[str, str] | None = None) -> None:
     """Attach a photo, skin profile and recommendation to a visit."""
+    raw_path, norm_path = photo_paths if photo_paths else ("", "")
     photo = Photo(
         view="front",
+        raw_path=raw_path,
+        normalized_path=norm_path,
         quality_score=quality_score,
         quality_json="{}",
         wb_method="gray_world",
@@ -119,7 +143,11 @@ def seed_if_empty() -> None:
         )
         hero.visits.append(visit)
         entries = _make_profile(base, seed=100 + i)
-        _persist_visit(session, visit, entries, 88.0 - i * 2, prev_entries)
+        photo_paths = _copy_sample_photo(
+            f"hero_v{i + 1}.jpg", f"hero_v{i + 1}"
+        )
+        _persist_visit(session, visit, entries, 88.0 - i * 2,
+                       prev_entries, photo_paths)
         prev_entries = entries
 
     # --- other customers: populate the CRM list and the overdue filter ---
