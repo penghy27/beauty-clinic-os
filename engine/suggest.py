@@ -9,17 +9,29 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import yaml
 
-from pipeline.metrics import METRIC_LABELS_ZH, ProfileEntry, by_metric
+from pipeline.metrics import (
+    METRIC_LABELS_ZH,
+    NOISE_BAND,
+    ProfileEntry,
+    by_metric,
+)
 from pipeline.regions import REGION_LABELS_ZH
 
 RULES_PATH = Path(__file__).resolve().parent.parent / "rules" / "treatments.yaml"
 
-IMPROVED_DELTA = 5.0   # sub-score points counted as a real improvement
+
+def _band(metric: str) -> float:
+    """Per-metric measurement noise band (sub-score points).
+
+    Derived from the repeatability harness; a between-visit delta inside
+    the band is treated as noise, not treatment effect.
+    """
+    return NOISE_BAND.get(metric, 5.0)
 
 
 @dataclass
@@ -94,12 +106,16 @@ def suggest(current: list[ProfileEntry],
 
 
 def _apply_humanize(suggestions: list[Suggestion]) -> None:
-    """Optional polish — silently no-op when LLM key/package is absent."""
+    """Optional polish — silently no-op on any failure.
+
+    The whole call is guarded, not just the import: the engine's contract
+    is that no LLM problem may ever block a consultation.
+    """
     try:
         from engine import humanize
+        refined = humanize.refine(suggestions)
     except Exception:
         return
-    refined = humanize.refine(suggestions)
     if not refined:
         return
     for s in suggestions:
@@ -127,9 +143,9 @@ def _trend_note(metric: str, curr_avg: float,
     label = METRIC_LABELS_ZH[metric]
     delta = curr_avg - prev_avg
     span = f"（{prev_avg:.0f} → {curr_avg:.0f}）"
-    if delta >= IMPROVED_DELTA:
+    if delta >= _band(metric):
         return f"{label}較上次進步 {delta:+.0f} 分{span}，療程有效，建議延續同方案。"
-    if delta <= -IMPROVED_DELTA:
+    if delta <= -_band(metric):
         return f"{label}較上次退步 {delta:+.0f} 分{span}，改善有限，建議調整療程強度或方式。"
     return f"{label}較上次持平{span}，建議維持並持續追蹤。"
 
@@ -145,7 +161,7 @@ def positive_notes(current: list[ProfileEntry],
         if prev_avg is None:
             continue
         delta = curr_avg - prev_avg
-        if delta >= IMPROVED_DELTA:
+        if delta >= _band(metric):
             notes.append(
                 f"{METRIC_LABELS_ZH[metric]}進步 {delta:+.0f} 分"
                 f"（{prev_avg:.0f} → {curr_avg:.0f}）"

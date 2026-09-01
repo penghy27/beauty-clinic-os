@@ -12,8 +12,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
-import numpy as np
 import mediapipe as mp
+import numpy as np
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision
 
@@ -47,6 +47,25 @@ class LandmarkResult:
     yaw: float                        # degrees, 0 = frontal
     pitch: float                      # degrees, 0 = frontal
     roll: float                       # degrees, 0 = level
+    native_face_width: float = 0.0    # face-box width at capture resolution
+
+    def scaled(self, factor: float,
+               image_shape: tuple[int, int]) -> LandmarkResult:
+        """This result mapped onto a resized copy of the same image.
+
+        Ratios and angles are scale-invariant; native_face_width keeps the
+        capture resolution so the quality gate can still see it.
+        """
+        x, y, w, h = self.face_box
+        return LandmarkResult(
+            landmarks_px=self.landmarks_px * factor,
+            image_shape=image_shape,
+            face_box=(int(x * factor), int(y * factor),
+                      int(round(w * factor)), int(round(h * factor))),
+            face_ratio=self.face_ratio,
+            yaw=self.yaw, pitch=self.pitch, roll=self.roll,
+            native_face_width=self.native_face_width,
+        )
 
 
 def detect(image_bgr: np.ndarray) -> LandmarkResult | None:
@@ -72,7 +91,8 @@ def detect(image_bgr: np.ndarray) -> LandmarkResult | None:
         yaw, pitch, roll = _pose_from_matrix(
             result.facial_transformation_matrixes[0]
         )
-    return LandmarkResult(pts, (h, w), face_box, face_ratio, yaw, pitch, roll)
+    return LandmarkResult(pts, (h, w), face_box, face_ratio, yaw, pitch, roll,
+                          native_face_width=float(face_box[2]))
 
 
 def crop_face(image_bgr: np.ndarray, result: LandmarkResult,

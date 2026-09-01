@@ -2,19 +2,30 @@
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 
 import cv2
 import numpy as np
 import streamlit as st
 from PIL import Image
 
-from db.models import PHOTO_DIR, Customer, get_session
+from db.models import PHOTO_DIR, PROJECT_ROOT, Customer, get_session
 from pipeline.metrics import ProfileEntry, overall_score
 
 
 def get_db():
-    """A fresh SQLAlchemy session for the current Streamlit run."""
-    return get_session()
+    """A fresh SQLAlchemy session for the current Streamlit run.
+
+    Streamlit re-executes the script per interaction and each page render
+    calls this exactly once, so closing the previous run's session here
+    keeps a single open session per user instead of leaking one per rerun.
+    """
+    old = st.session_state.get("_db_session")
+    if old is not None:
+        old.close()
+    db = get_session()
+    st.session_state["_db_session"] = db
+    return db
 
 
 def nav(page: str, customer_id: int | None = None) -> None:
@@ -37,11 +48,28 @@ def to_rgb(image_bgr: np.ndarray) -> np.ndarray:
 
 
 def save_photo(image_bgr: np.ndarray, filename: str) -> str:
-    """Persist an image under data/photos and return its path."""
+    """Persist an image under data/photos; return its project-relative path.
+
+    Relative paths keep the database portable across checkouts and hosts.
+    """
     PHOTO_DIR.mkdir(parents=True, exist_ok=True)
     path = PHOTO_DIR / filename
     cv2.imwrite(str(path), image_bgr)
-    return str(path)
+    return str(path.relative_to(PROJECT_ROOT))
+
+
+def photo_file(path: str) -> Path | None:
+    """DB photo path -> existing absolute Path, or None when missing.
+
+    Paths are stored relative to the project root; absolute paths written
+    by older versions still resolve as-is.
+    """
+    if not path:
+        return None
+    p = Path(path)
+    if not p.is_absolute():
+        p = PROJECT_ROOT / p
+    return p if p.exists() else None
 
 
 # --- scoring helpers ---
@@ -77,6 +105,17 @@ def visit_entries(visit) -> list[ProfileEntry]:
 
 def visit_overall(visit) -> float:
     return overall_score(visit_entries(visit))
+
+
+def visit_method_version(visit) -> str:
+    """Measurement-method version of the visit's Skin Profile ("" if none).
+
+    Profiles produced by different method versions are not directly
+    comparable; callers must check this before diffing two visits.
+    """
+    if not visit.photos or not visit.photos[0].profiles:
+        return ""
+    return visit.photos[0].profiles[0].method_version
 
 
 def latest_visit(customer):

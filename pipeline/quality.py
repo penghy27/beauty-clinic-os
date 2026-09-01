@@ -13,9 +13,10 @@ import numpy as np
 
 from pipeline.landmarks import LandmarkResult
 
-# --- thresholds (tuned for typical phone selfies) ---
-BLUR_FAIL, BLUR_WARN = 55.0, 110.0          # variance of Laplacian
+# --- thresholds (tuned at the pipeline's canonical face scale) ---
+BLUR_FAIL, BLUR_WARN = 45.0, 100.0          # variance of Laplacian
 FACE_RATIO_FAIL, FACE_RATIO_WARN = 0.22, 0.38
+RESOLUTION_FAIL, RESOLUTION_WARN = 220.0, 340.0  # native face width, px
 POSE_FAIL, POSE_WARN = 20.0, 12.0           # yaw / pitch, degrees
 ROLL_WARN = 12.0
 DARK_FAIL, DARK_WARN = 55.0, 85.0           # mean face brightness (0-255)
@@ -62,6 +63,7 @@ def assess(image_bgr: np.ndarray, lm: LandmarkResult) -> QualityReport:
     checks = [
         _check_sharpness(image_bgr, lm),
         _check_face_size(lm),
+        _check_resolution(lm),
         _check_pose(lm),
         _check_exposure(image_bgr, lm),
         _check_lighting_symmetry(image_bgr, lm),
@@ -110,6 +112,28 @@ def _check_face_size(lm: LandmarkResult) -> QualityCheck:
                             f"臉部偏小（占畫面 {r*100:.0f}%），建議靠近。", r)
     return QualityCheck("臉部大小", "pass",
                         f"構圖適中（占畫面 {r*100:.0f}%）。", r)
+
+
+def _check_resolution(lm: LandmarkResult) -> QualityCheck:
+    """Pixel density of the capture itself.
+
+    Texture and spot metrics read from detail the sensor actually recorded;
+    upscaling cannot restore it, so a face captured too small is flagged
+    here rather than mislabelled as \"blurry\".
+    """
+    w = lm.native_face_width or float(lm.face_box[2])
+    if w < RESOLUTION_FAIL:
+        return QualityCheck(
+            "解析度", "fail",
+            f"臉部解析度不足（僅 {w:.0f}px 寬），細緻度與斑點量測不可信，"
+            "請靠近鏡頭或改用較高解析度相機。", w)
+    if w < RESOLUTION_WARN:
+        return QualityCheck(
+            "解析度", "warn",
+            f"臉部解析度偏低（{w:.0f}px 寬），細緻度與斑點分數可能偏優，"
+            "跨次比對時請以相同鏡頭拍攝。", w)
+    return QualityCheck("解析度", "pass",
+                        f"解析度充足（臉寬 {w:.0f}px）。", w)
 
 
 def _check_pose(lm: LandmarkResult) -> QualityCheck:

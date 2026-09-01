@@ -13,12 +13,12 @@ from datetime import date, datetime, timedelta
 import pandas as pd
 import streamlit as st
 
-from db.models import Photo, Recommendation, SkinProfile, Visit
+from db.models import METHOD_VERSION, Photo, Recommendation, SkinProfile, Visit
 from engine import suggest as engine
+from pipeline import viz
 from pipeline.metrics import METRIC_LABELS_ZH, by_metric
 from pipeline.process import process_photo
 from pipeline.regions import REGION_LABELS_ZH
-from pipeline import viz
 from ui.common import (
     get_db,
     nav,
@@ -29,6 +29,7 @@ from ui.common import (
     score_tag,
     to_rgb,
     visit_entries,
+    visit_method_version,
 )
 
 
@@ -107,8 +108,9 @@ def _render_skin_analysis(result) -> None:
              use_container_width=True)
     c3.image(to_rgb(overlay), caption="量測區域", use_container_width=True)
     st.caption(
-        "色彩校正採 gray-world white balance，移除光線/裝置色偏；"
-        "量測區域錨定臉部 landmark，每次就診取樣一致。"
+        "色彩校正以背景估計光線色偏、以臉部亮度定錨曝光；"
+        "影像縮放至固定臉寬後量測，量測區域錨定臉部 landmark，"
+        "每次就診取樣一致。"
     )
 
     st.markdown(f"**膚質總分** {score_tag(result.overall)}　"
@@ -116,7 +118,7 @@ def _render_skin_analysis(result) -> None:
                 unsafe_allow_html=True)
     metric_scores = by_metric(result.profile)
     cols = st.columns(len(metric_scores))
-    for col, (metric, score) in zip(cols, metric_scores.items()):
+    for col, (metric, score) in zip(cols, metric_scores.items(), strict=True):
         col.metric(METRIC_LABELS_ZH[metric], f"{score:.0f}")
 
     with st.expander("各區域明細"):
@@ -139,6 +141,11 @@ def _render_consultation_plan(db, customer, result) -> None:
 
     if previous:
         st.caption("已對照上次就診數據，建議含療程成效追蹤。")
+    elif customer.visits:
+        st.caption(
+            "未對照上次就診數據（無膚質紀錄或量測方法版本不同），"
+            "本次以現行方法重新建立比對基準。"
+        )
     if not suggestions:
         st.success("目前各項膚質指標良好，無須額外療程，建議維持保養與定期追蹤。")
 
@@ -197,9 +204,18 @@ def _plan_dataframe(suggestions) -> pd.DataFrame:
 
 
 def _previous_entries(customer):
+    """Skin Profile of the last visit, when the current method measured it.
+
+    Profiles from an older method version use a different scale, so the
+    outcome-aware comparison is skipped and this consultation starts a
+    fresh baseline instead.
+    """
     if not customer.visits:
         return None
-    return visit_entries(customer.visits[-1]) or None
+    last = customer.visits[-1]
+    if visit_method_version(last) != METHOD_VERSION:
+        return None
+    return visit_entries(last) or None
 
 
 def _save(db, customer, result, suggestions, edited_df, note,

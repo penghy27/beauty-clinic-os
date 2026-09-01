@@ -23,7 +23,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 PHOTO_DIR = DATA_DIR / "photos"
 DB_PATH = DATA_DIR / "clinic.db"
 
-METHOD_VERSION = "v1"
+METHOD_VERSION = "v2"
 
 
 class Base(DeclarativeBase):

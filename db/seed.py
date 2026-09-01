@@ -25,20 +25,13 @@ from db.models import (
     init_db,
 )
 from engine import suggest as engine
-from pipeline.metrics import METRICS, ProfileEntry
+from pipeline.metrics import METRICS, RANGES, ProfileEntry
 from pipeline.regions import REGION_ORDER
-
-# inverse of pipeline.metrics._RANGES — derive a plausible raw value
-_RANGES = {
-    "redness": (8.0, 34.0),
-    "evenness": (6.0, 30.0),
-    "texture": (15.0, 260.0),
-    "spots": (0.0, 14.0),
-}
 
 
 def _raw_value(metric: str, sub_score: float) -> float:
-    good, bad = _RANGES[metric]
+    """Inverse of pipeline.metrics._sub_score — a plausible raw value."""
+    good, bad = RANGES[metric]
     return round(bad - sub_score / 100.0 * (bad - good), 2)
 
 
@@ -70,7 +63,11 @@ def _copy_sample_photo(src_name: str, label: str) -> tuple[str, str] | None:
     norm = PHOTO_DIR / f"{label}_norm.jpg"
     shutil.copyfile(source, raw)
     shutil.copyfile(source, norm)
-    return (str(raw), str(norm))
+    try:
+        return (str(raw.relative_to(PROJECT_ROOT)),
+                str(norm.relative_to(PROJECT_ROOT)))
+    except ValueError:  # PHOTO_DIR outside the project (tests)
+        return (str(raw), str(norm))
 
 
 def _persist_visit(session, visit: Visit, entries: list[ProfileEntry],
@@ -85,7 +82,7 @@ def _persist_visit(session, visit: Visit, entries: list[ProfileEntry],
         normalized_path=norm_path,
         quality_score=quality_score,
         quality_json="{}",
-        wb_method="gray_world",
+        wb_method="gray_world_bg+face_lum",
     )
     visit.photos.append(photo)
     for e in entries:
@@ -134,7 +131,7 @@ def seed_if_empty() -> None:
     hero_revisits = [date(2026, 3, 25), date(2026, 4, 29), date(2026, 5, 26)]
     prev_entries: list[ProfileEntry] | None = None
     for i, (base, vdate, rdate) in enumerate(
-        zip(hero_bases, hero_dates, hero_revisits)
+        zip(hero_bases, hero_dates, hero_revisits, strict=True)
     ):
         visit = Visit(
             visit_date=vdate, consultant="諮詢師 A",
