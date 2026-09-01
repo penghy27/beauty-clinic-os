@@ -32,8 +32,8 @@ The product is one **closed loop**, not a set of separate features: *standardize
 
 What the prototype implements today:
 
-- **Standardized photo intake.** A front-face photo — uploaded or captured live in-browser via the consultant's webcam — runs through a **Capture Quality gate** (blur, pose, exposure/side-lighting, face ratio) producing a 0–100 score and a check-list. Poor photos are rejected with an explanation, so longitudinal comparison stays trustworthy.
-- **Quantified skin profile.** Colour is normalized (gray-world white balance); landmark-anchored regions are sampled identically every visit; four metrics — **redness, evenness, texture, spots** — are scored 0–100 per region.
+- **Standardized photo intake.** A front-face photo — uploaded or captured live in-browser via the consultant's webcam — runs through a **Capture Quality gate** (blur, pose, exposure/side-lighting, face ratio, capture resolution) producing a 0–100 score and a check-list. Poor photos are rejected with an explanation, so longitudinal comparison stays trustworthy.
+- **Quantified skin profile.** Every photo is measured at a fixed face scale with colour and exposure normalized, so a webcam capture and a phone photo are scored on the same footing; landmark-anchored regions are sampled identically every visit; four metrics — **redness, evenness, texture, spots** — are scored 0–100 per region, each with a measured noise band so real change is never confused with capture noise.
 - **Explainable recommendations.** A rules-based engine produces ranked treatment suggestions; each one names the exact metric, region and score that triggered it (e.g. "right cheek redness 72"), so it reads as evidence, not an upsell. The consultant can edit, reorder, add or remove items before saving.
 - **Consultation view.** Consultant and customer look at the same screen: skin map plus the data behind each suggestion.
 - **CRM tracking.** Customer records, visit timeline, package session counts (bought / used / remaining), payment status, and a next-revisit date with an **overdue-revisit** filter — replacing the paper book.
