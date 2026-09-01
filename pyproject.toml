@@ -1,0 +1,16 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = [
+    "E501",  # long Mandarin UI strings
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["db", "engine", "pipeline", "ui", "tests"]
