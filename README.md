@@ -2,6 +2,8 @@
 
 **An AI-native CRM and clinical decision-support prototype for Taiwanese aesthetic clinics.**
 
+**Live demo:** https://beauty-clinic-os.streamlit.app
+
 Beauty Clinic OS gives first-line consultants one standardized, evidence-based consultation flow. It takes a quality-checked face photo, scores the skin, suggests treatments with the reason for each, and tracks packages, payments and revisits. On later visits it measures again and shows the customer what has actually improved.
 
 > Built as a working prototype in Python / Streamlit. The UI is in Traditional Chinese (Taiwan) by design.
@@ -55,6 +57,8 @@ outcome-aware next suggestions ← progress report ← CRM (packages, payments, 
 | Quality | pytest, ruff, GitHub Actions |
 
 ## Getting started
+
+The quickest way to try it is the [live demo](https://beauty-clinic-os.streamlit.app). It is preloaded with demo data. To run it locally:
 
 **Requirements:** Python 3.12. On Linux, also install the native libraries MediaPipe needs (listed in `packages.txt`):
 
